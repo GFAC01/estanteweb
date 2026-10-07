@@ -2,34 +2,86 @@ package br.com.estanteweb;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.stereotype.Repository;
+
+@Repository
 public class LivroRepository {
-    private List<Livro> livros = List.of(
-        new Livro("God Of War Origins", "Santa Monica Studio", 2026, 19.90),
-        new Livro("Cyberpunk 2077", "CD Projekt Red", 2020, 29.90),
-        new Livro("<strong>Dark Souls</strong>", "FromSoftware", 2011, 39.90),
-        new Livro("The Last Of Us", "Naughty Dog", 2013, 19.90),
-        new Livro("Halo", "Bungie", 2001, 29.90),
-        new Livro("The Witcher 3: Wild Hunt", "CD Projekt Red", 2015, 39.90)
-    );
 
+    private final JdbcTemplate jdbcTemplate;
+
+    public LivroRepository(JdbcTemplate jdbcTemplate) {
+        this.jdbcTemplate = jdbcTemplate;
+    }
+
+    // Busca todos os livros no banco
     public List<Livro> listarTodas() {
+
+        String sql = "SELECT * FROM livro";
+
+        List<Map<String, Object>> linhas = jdbcTemplate.queryForList(sql);
+
+        List<Livro> livros = new ArrayList<>();
+
+        for (Map<String, Object> linha : linhas) {
+
+            Livro livro = new Livro();
+
+            livro.setId(((Number) linha.get("id")).intValue());
+            livro.setTitulo((String) linha.get("titulo"));
+            livro.setAutor((String) linha.get("autor"));
+            livro.setAno(((Number) linha.get("ano")).intValue());
+            livro.setPreco(((Number) linha.get("preco")).doubleValue());
+
+            livros.add(livro);
+        }
+
         return livros;
-    };
+    }
 
+    // Conta quantos livros existem no banco
     public int contarLivros() {
-        return livros.size();
-    };
 
+        String sql = "SELECT COUNT(*) FROM livro";
+
+        return jdbcTemplate.queryForObject(sql, Integer.class);
+    }
+
+    // Busca livros até determinado preço
     public List<Livro> listarAtePreco(double precoMaximo) {
 
-        List<Livro> livrosAtePreco = new ArrayList<>();
-        for (Livro l : livros) {
-            if (l.getPreco() <= precoMaximo) {
-                livrosAtePreco.add(l);
-            }
-        }
-        return livrosAtePreco;
-    };
+        String sql = "SELECT * FROM livro WHERE preco <= ?";
 
+        List<Map<String, Object>> linhas =
+                jdbcTemplate.queryForList(sql, precoMaximo);
+
+        List<Livro> livrosAtePreco = new ArrayList<>();
+
+        for (Map<String, Object> linha : linhas) {
+
+            Livro livro = new Livro();
+
+            livro.setId(((Number) linha.get("id")).intValue());
+            livro.setTitulo((String) linha.get("titulo"));
+            livro.setAutor((String) linha.get("autor"));
+            livro.setAno(((Number) linha.get("ano")).intValue());
+            livro.setPreco(((Number) linha.get("preco")).doubleValue());
+
+            livrosAtePreco.add(livro);
+        }
+
+        return livrosAtePreco;
+    }
+
+    // Soma o preço de todos os livros
+    public double valorTotal() {
+
+        String sql = "SELECT SUM(preco) FROM livro";
+
+        Double total = jdbcTemplate.queryForObject(sql, Double.class);
+
+        return total != null ? total : 0.0;
+    }
 }

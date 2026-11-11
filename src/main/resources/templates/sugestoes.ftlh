@@ -1,33 +1,21 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html>
 <head>
     <meta charset="UTF-8">
+    <#include "cabecalho.ftlh">
     <title>Sugestões</title>
 </head>
 <body>
 
-<h1>Sugestões de Leitura</h1>
-
-<#if sugestoes?size == 0>
-
-    <p>Nenhuma sugestão cadastrada.</p>
-
-<#else>
+    <h1>Sugestões de Livros</h1>
 
     <ul>
         <#list sugestoes as sugestao>
             <li>
-                ${sugestao.nomeCliente} sugeriu
-                <strong>${sugestao.livroSugerido}</strong>
+                ${sugestao.nomeCliente} - ${sugestao.livroSugerido}
             </li>
         </#list>
     </ul>
-
-</#if>
-
-<#if enviada?? && enviada>
-    <p>Sugestão enviada com sucesso!</p>
-</#if>
 
 </body>
 </html>

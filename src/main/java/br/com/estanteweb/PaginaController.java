@@ -1,47 +1,42 @@
 package br.com.estanteweb;
 
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+
 
 @Controller
 public class PaginaController {
-
-    @GetMapping("/")
-    public String paginaInicial() {
-        return "<h1>EstanteWeb: livros usados com história, boas vindas</h1>";
+    @ResponseBody
+    @GetMapping("/")        
+    public String inicio(){
+        return "EstanteWeb: livros usados com história";
     }
-
+    @ResponseBody
     @GetMapping("/sobre")
-    public String sobre() {
-        return "<h1>Sobre a EstanteWeb</h1><p>A EstanteWeb é uma plataforma online que conecta leitores apaixonados por livros usados. Nosso objetivo é proporcionar uma experiência única, permitindo que os usuários compartilhem suas histórias literárias e encontrem obras com significado especial.</p>";
+    public String descricao(){
+        return "A loja EstanteWeb é uma loja de livros antigos e usados que possuem historias em si";
     }
-
     @GetMapping("/contato")
     public String contato(Model model) {
         return "contato";
     }
-
     @PostMapping("/contato")
-    public String enviarContato(
-            @RequestParam String nome,
-            @RequestParam String mensagem,
-            Model model) {
-
-        if (mensagem == null || mensagem.isBlank()) {
-            model.addAttribute("erro", "A mensagem não pode ficar em branco.");
+    public String contato(Model model, @RequestParam("nome") String nome, @RequestParam("mensagem") String mensagem) {
+        if(mensagem.isBlank()){
+            model.addAttribute("erro", "Mensagem está vazia");
             model.addAttribute("nome", nome);
             return "contato";
         }
-
         return "redirect:/contato/sucesso";
     }
-
     @GetMapping("/contato/sucesso")
-    public String contatoSucesso() {
+    public String sucesso(){
         return "contato-sucesso";
     }
-
 }
+

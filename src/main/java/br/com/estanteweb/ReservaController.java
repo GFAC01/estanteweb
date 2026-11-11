@@ -6,27 +6,24 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.ui.Model;
 
-
 @Controller
 public class ReservaController {
-    
+
     @GetMapping("/reserva")
-    public String reserva() {
+    public String reserva(){
         return "reserva";
     }
-
     @PostMapping("/reserva")
-    public String postReserva(
-        @RequestParam String nome,
-        @RequestParam String telefone,
-        Model container) 
-        {
-            if (telefone.isBlank()) {
-                container.addAttribute("erro", " o campo Telefone é obrigatório");
-                container.addAttribute("nome", nome);
-                return "reserva";
-            }
-
+    public String postReserva(@RequestParam String nome, @RequestParam String telefone, Model container){
+        if(telefone.isBlank()){
+            container.addAttribute("erro", "O campo telefone deve ser preenchido");
+            container.addAttribute("nome", nome);
             return "reserva";
         }
+        return "sucesso";
+    }
+    @GetMapping("/sucesso")
+    public String sucesso(){
+        return "sucesso";
+    }
 }

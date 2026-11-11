@@ -1,7 +1,7 @@
-<#include "cabecalho.ftlh">
+<header>
+    <h2>EstanteWeb</h2>
+    <a href="/">Voltar para o início</a>
+</header>
 
-<h1>Mensagem enviada com sucesso!</h1>
-
-<p>Obrigado por entrar em contato conosco.</p>
-
-<a href="/contato">Voltar para o contato</a>
+<p>Obrigado pelo contato!</p>
+<p>Sua mensagem foi enviada com sucesso.</p>

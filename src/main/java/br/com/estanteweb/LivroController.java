@@ -1,118 +1,132 @@
 package br.com.estanteweb;
 
 import java.util.List;
-
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.server.ResponseStatusException;
 
 @Controller
 public class LivroController {
 
-    private final LivroRepository repositorio;
+    @Autowired 
+    private LivroRepository repoLivros;
 
-    public LivroController(LivroRepository repositorio) {
-        this.repositorio = repositorio;
+    @GetMapping("/livros/{id}")
+    public String detalhes(@PathVariable Long id, Model model) {
+        Livro livro = repoLivros.buscarPorId(id);
+        if (livro == null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+        }
+        model.addAttribute("livro", livro);
+
+        // 4.4 Desafio: outros títulos do mesmo autor
+        List<Livro> outrosLivros = repoLivros.listarDoMesmoAutor(livro.getAutor(), id);
+        model.addAttribute("outrosLivros", outrosLivros);
+
+        return "livro";
     }
 
-    // Página com todos os livros
-    @GetMapping("/livros")
-    public String listarLivros(Model model) {
-
-        model.addAttribute("livros", repositorio.listarTodas());
+    @GetMapping(value = "/livros/html", produces = "text/html")
+    public String listarHtml(Model model, @RequestParam(required = false) String ordem) { 
+        if (ordem != null && !ordem.isBlank()) {
+            model.addAttribute("livros", repoLivros.listarOrdenadoPor(ordem));
+        } else {
+            model.addAttribute("livros", repoLivros.listarTodos());
+        }
 
         return "livros";
     }
 
-    // Conta quantos livros existem no banco
+    @ResponseBody
+    @GetMapping("/livros")
+    public String books(){
+        String resposta = "Acervo EstanteWeb: ";
+        for(Livro l : repoLivros.listarTodos()){
+            resposta += l.getTitulo() + ", " +
+            l.getAutor() + " " +
+            l.getAno() + " (R$ " +
+            String.format("%.2f", l.getPreco()) + ") | ";
+        }
+        return resposta;
+    }
+
+    @ResponseBody
     @GetMapping("/livros/total")
-    @ResponseBody
-    public String calcularTotal() {
-
-        int total = repositorio.contarLivros();
-
-        return String.format(
-                "<h1>Total de Livros: %d</h1>",
-                total
-        );
+    public String contBooks(){
+        String response = repoLivros.contarLivros();
+        return response;
     }
 
-    // Busca livros pelo preço máximo
     @GetMapping("/livros/busca")
-    public ResponseEntity<String> precoMaximo(
-            @RequestParam(defaultValue = "999") double precoMaximo) {
-
-        List<Livro> livros =
-                repositorio.listarAtePreco(precoMaximo);
-
-        if (livros.isEmpty()) {
-
-            String mensagem = String.format(
-                    "<h1>Nenhum livro encontrado com o preço até R$ %.2f.</h1>",
-                    precoMaximo
-            );
-
-            return ResponseEntity
-                    .status(404)
-                    .body(mensagem);
+    public ResponseEntity<String> buscaLivros(@RequestParam(defaultValue = "999") double precoMaximo){
+        String resposta = "Acervo EstanteWeb: ";
+        for(Livro l : repoLivros.listarAtePreco(precoMaximo)){
+            resposta += l.getTitulo() + ", " +
+            l.getAutor() + " " +
+            l.getAno() + " (R$ " +
+            String.format("%.2f", l.getPreco()) + ") | ";
         }
-
-        StringBuilder sb = new StringBuilder();
-
-        sb.append(
-                String.format(
-                        "<h1>Livros até R$: %.2f</h1>",
-                        precoMaximo
-                )
-        );
-
-        sb.append("<ul>");
-
-        for (Livro livro : livros) {
-
-            sb.append("<li>")
-                    .append(livro.getTitulo())
-                    .append(" - ")
-                    .append(livro.getAutor())
-                    .append(" (")
-                    .append(livro.getAno())
-                    .append(") - R$ ")
-                    .append(livro.getPreco())
-                    .append("</li>");
+        List<Livro> resultado = repoLivros.listarAtePreco(precoMaximo);
+        if(resultado.isEmpty()){
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Nenhum livro encontrado");
         }
-
-        sb.append("</ul>");
-
-        return ResponseEntity
-                .ok()
-                .header(
-                        "X-Total-Encontrados",
-                        String.valueOf(livros.size())
-                )
-                .body(sb.toString());
+        return ResponseEntity.ok()
+        .header("X-Total-Encontrados", String.valueOf(resultado.size()))
+        .body(resposta);
     }
 
-    // Mostra o navegador utilizado pelo usuário
-    @GetMapping("/livros/quem-acessa")
     @ResponseBody
-    public String quemAcessa(
-            @RequestHeader("User-Agent") String userAgent) {
-
-        return "<h1>Você acessou o sistema usando:</h1>"
-                + "<p>"
-                + userAgent
-                + "</p>";
+    @GetMapping("/livros/quem-acessa")
+    public String quemAcessa(@RequestHeader("User-Agent") String userAgent) {
+        return "User-Agent em questão: " + userAgent;
     }
-
-    // Calcula o valor total dos livros
+    
     @GetMapping("/livros/valor-total")
     @ResponseBody
-    public double valorTotal() {
+    public String valorTotal() {
+        Double total = repoLivros.somarValorAcervo();
 
-        return repositorio.valorTotal();
+        return String.format(
+            "Valor total do acervo: R$ %.2f",
+            total
+        );
+    }
+
+    @GetMapping("/livros/novo")
+    public String cadastro(){
+        return "livro-novo";
+    }
+
+    @PostMapping("/livros")
+    public String cadastros(Model model, @RequestParam String titulo, @RequestParam String autor, @RequestParam int ano, @RequestParam double preco){
+        Livro livro = new Livro();
+
+        if (livro.getTitulo().isEmpty()) {
+            model.addAttribute("erro", "Todos os campos são obrigatórios e o preço deve ser maior que zero.");
+        }
+        if (livro.getAutor().isEmpty()) {
+            model.addAttribute("erro", "Todos os campos são obrigatórios e o preço deve ser maior que zero.");
+        }
+        if (livro.getPreco() <= 0) {
+            model.addAttribute("erro", "Todos os campos são obrigatórios e o preço deve ser maior que zero.");
+        }
+
+        livro.setTitulo(titulo);
+        livro.setAutor(autor);
+        livro.setAno(ano);
+        livro.setPreco(preco);
+
+        repoLivros.salvar(livro);
+
+        return "redirect:/livros/html";
     }
 }

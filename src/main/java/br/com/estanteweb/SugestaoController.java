@@ -1,51 +1,48 @@
 package br.com.estanteweb;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 
 @Controller
 public class SugestaoController {
 
-    private SugestaoRepository repositorio = new SugestaoRepository();
+    @Autowired
+    private SugestaoRepository repoSugestoes;
 
     @GetMapping("/sugestoes/nova")
-    public String novaSugestao() {
+    public String sugestoes(Model model) {
         return "sugestao-nova";
     }
 
-    @PostMapping("/sugestoes")
-    public String salvarSugestao(
-            @RequestParam String nomeCliente,
-            @RequestParam String livroSugerido,
-            Model model) {
-
-        if (nomeCliente == null || nomeCliente.isBlank()
-                || livroSugerido == null || livroSugerido.isBlank()) {
-
-            model.addAttribute("erro", "Preencha seu nome e o livro sugerido.");
-            model.addAttribute("nomeCliente", nomeCliente);
-            model.addAttribute("livroSugerido", livroSugerido);
-
-            return "sugestao-nova";
-        }
-
-        repositorio.adicionar(
-            new Sugestao(nomeCliente, livroSugerido)
-        );
-
-        return "redirect:/sugestoes?enviada=true";
-    }
-
     @GetMapping("/sugestoes")
-    public String listarSugestoes(
-            @RequestParam(required = false) Boolean enviada,
-            Model model) {
-
-        model.addAttribute("sugestoes", repositorio.listarTodas());
-        model.addAttribute("enviada", enviada);
-
+    public String listar(Model model) {
+        model.addAttribute("sugestoes", repoSugestoes.listarTodas());
         return "sugestoes";
     }
 
+    @PostMapping("/sugestoes")
+    public String sugestao(Model model, @RequestParam("nomeCliente") String nomeCliente,
+            @RequestParam("livroSugerido") String livroSugerido) {
+        if (livroSugerido.isBlank()) {
+            model.addAttribute("erro", "Livro sugerido não informado");
+            model.addAttribute("nomeCliente", nomeCliente);
+            model.addAttribute("livroSugerido", livroSugerido);
+            return "sugestao-nova";
+        }
+        if (nomeCliente.isBlank()) {
+            model.addAttribute("erro", "Nome do cliente não informado");
+            model.addAttribute("livroSugerido", livroSugerido);
+            model.addAttribute("nomeCliente", nomeCliente);
+            return "sugestao-nova";
+        }
+
+        Sugestao sugestao = new Sugestao(nomeCliente, livroSugerido);
+        repoSugestoes.salvar(sugestao);
+
+        return "redirect:/sugestoes";
+    }
 }

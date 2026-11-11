@@ -4,84 +4,90 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
 @Repository
 public class LivroRepository {
 
-    private final JdbcTemplate jdbcTemplate;
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
 
-    public LivroRepository(JdbcTemplate jdbcTemplate) {
-        this.jdbcTemplate = jdbcTemplate;
-    }
-
-    // Busca todos os livros no banco
-    public List<Livro> listarTodas() {
-
+    public List<Livro> listarTodos() {
         String sql = "SELECT * FROM livro";
-
         List<Map<String, Object>> linhas = jdbcTemplate.queryForList(sql);
-
         List<Livro> livros = new ArrayList<>();
-
         for (Map<String, Object> linha : linhas) {
-
-            Livro livro = new Livro();
-
-            livro.setId(((Number) linha.get("id")).intValue());
-            livro.setTitulo((String) linha.get("titulo"));
-            livro.setAutor((String) linha.get("autor"));
-            livro.setAno(((Number) linha.get("ano")).intValue());
-            livro.setPreco(((Number) linha.get("preco")).doubleValue());
-
-            livros.add(livro);
+            livros.add(Livro.deMap(linha));
         }
-
         return livros;
     }
 
-    // Conta quantos livros existem no banco
-    public int contarLivros() {
-
-        String sql = "SELECT COUNT(*) FROM livro";
-
-        return jdbcTemplate.queryForObject(sql, Integer.class);
+    public Livro buscarPorId(Long id) {
+        String sql = "SELECT * FROM livro WHERE id = ?";
+        List<Map<String, Object>> linhas = jdbcTemplate.queryForList(sql, id);
+        if (linhas.isEmpty()) {
+            return null;
+        }
+        return Livro.deMap(linhas.get(0));
     }
 
-    // Busca livros até determinado preço
-    public List<Livro> listarAtePreco(double precoMaximo) {
-
-        String sql = "SELECT * FROM livro WHERE preco <= ?";
-
-        List<Map<String, Object>> linhas =
-                jdbcTemplate.queryForList(sql, precoMaximo);
-
-        List<Livro> livrosAtePreco = new ArrayList<>();
-
-        for (Map<String, Object> linha : linhas) {
-
-            Livro livro = new Livro();
-
-            livro.setId(((Number) linha.get("id")).intValue());
-            livro.setTitulo((String) linha.get("titulo"));
-            livro.setAutor((String) linha.get("autor"));
-            livro.setAno(((Number) linha.get("ano")).intValue());
-            livro.setPreco(((Number) linha.get("preco")).doubleValue());
-
-            livrosAtePreco.add(livro);
+    public List<Livro> listarOrdenadoPor(String coluna) {
+        if (coluna == null) {
+            return listarTodos();
         }
 
-        return livrosAtePreco;
+        coluna = coluna.toLowerCase().trim();
+        if (!List.of("titulo", "autor", "ano", "preco").contains(coluna)) {
+            return listarTodos();
+        }
+
+        String sql = "SELECT * FROM livro ORDER BY " + coluna;
+        List<Map<String, Object>> linhas = jdbcTemplate.queryForList(sql);
+        List<Livro> livros = new ArrayList<>();
+        for (Map<String, Object> linha : linhas) {
+            livros.add(Livro.deMap(linha));
+        }
+        return livros;
     }
 
-    // Soma o preço de todos os livros
-    public double valorTotal() {
+    public List<Livro> listarDoMesmoAutor(String autor, Long idAtual) {
+        String sql = "SELECT * FROM livro WHERE autor = ? AND id <> ?";
+        List<Map<String, Object>> linhas = jdbcTemplate.queryForList(sql, autor, idAtual);
+        List<Livro> livros = new ArrayList<>();
+        for (Map<String, Object> linha : linhas) {
+            livros.add(Livro.deMap(linha));
+        }
+        return livros;
+    }
 
+    public String contarLivros() {
+        String sql = "SELECT COUNT(*) FROM livro";
+        Integer total = jdbcTemplate.queryForObject(sql, Integer.class);
+
+        return "O acervo tem " + total + " Livros.";
+    }
+
+    public List<Livro> listarAtePreco(double precoMaximo) {
+        String sql = "SELECT * FROM livro WHERE preco <= ?";
+        List<Map<String, Object>> linhas =
+                jdbcTemplate.queryForList(sql, precoMaximo);
+        List<Livro> resultado = new ArrayList<>();
+        for (Map<String, Object> linha : linhas) {
+            resultado.add(Livro.deMap(linha));
+        }
+
+        return resultado;
+    }
+
+    public Double somarValorAcervo() {
         String sql = "SELECT SUM(preco) FROM livro";
+        return jdbcTemplate.queryForObject(sql, Double.class);
+    }   
 
-        Double total = jdbcTemplate.queryForObject(sql, Double.class);
-
-        return total != null ? total : 0.0;
+    public void salvar(Livro livro){
+        String sql = "INSERT INTO livro (titulo, autor, ano, preco) VALUES (?, ?, ?, ?)";
+        jdbcTemplate.update(sql, livro.getTitulo(), livro.getAutor(), livro.getAno(), livro.getPreco());
     }
 }

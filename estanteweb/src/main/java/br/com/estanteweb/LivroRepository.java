@@ -23,6 +23,45 @@ public class LivroRepository {
         }
         return livros;
     }
+
+    public Livro buscarPorId(Long id) {
+        String sql = "SELECT * FROM livro WHERE id = ?";
+        List<Map<String, Object>> linhas = jdbcTemplate.queryForList(sql, id);
+        if (linhas.isEmpty()) {
+            return null;
+        }
+        return Livro.deMap(linhas.get(0));
+    }
+
+    public List<Livro> listarOrdenadoPor(String coluna) {
+        if (coluna == null) {
+            return listarTodos();
+        }
+
+        coluna = coluna.toLowerCase().trim();
+        if (!List.of("titulo", "autor", "ano", "preco").contains(coluna)) {
+            return listarTodos();
+        }
+
+        String sql = "SELECT * FROM livro ORDER BY " + coluna;
+        List<Map<String, Object>> linhas = jdbcTemplate.queryForList(sql);
+        List<Livro> livros = new ArrayList<>();
+        for (Map<String, Object> linha : linhas) {
+            livros.add(Livro.deMap(linha));
+        }
+        return livros;
+    }
+
+    public List<Livro> listarDoMesmoAutor(String autor, Long idAtual) {
+        String sql = "SELECT * FROM livro WHERE autor = ? AND id <> ?";
+        List<Map<String, Object>> linhas = jdbcTemplate.queryForList(sql, autor, idAtual);
+        List<Livro> livros = new ArrayList<>();
+        for (Map<String, Object> linha : linhas) {
+            livros.add(Livro.deMap(linha));
+        }
+        return livros;
+    }
+
     public String contarLivros() {
         String sql = "SELECT COUNT(*) FROM livro";
         Integer total = jdbcTemplate.queryForObject(sql, Integer.class);
@@ -41,12 +80,24 @@ public class LivroRepository {
 
         return resultado;
     }
+
     public Double somarValorAcervo() {
         String sql = "SELECT SUM(preco) FROM livro";
         return jdbcTemplate.queryForObject(sql, Double.class);
     }   
+
     public void salvar(Livro livro){
         String sql = "INSERT INTO livro (titulo, autor, ano, preco) VALUES (?, ?, ?, ?)";
         jdbcTemplate.update(sql, livro.getTitulo(), livro.getAutor(), livro.getAno(), livro.getPreco());
+    }
+
+    public void atualizar(Livro livro) {
+        String sql = "UPDATE livro SET titulo = ?, autor = ?, ano = ?, preco = ? WHERE id = ?";
+        jdbcTemplate.update(sql, livro.getTitulo(), livro.getAutor(), livro.getAno(), livro.getPreco(), livro.getId());
+    }
+
+    public void remover(Long id) {
+        String sql = "DELETE FROM livro WHERE id = ?";
+        jdbcTemplate.update(sql, id);
     }
 }

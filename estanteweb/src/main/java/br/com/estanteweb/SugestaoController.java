@@ -25,7 +25,8 @@ public class SugestaoController {
     }
 
     @PostMapping("/sugestoes")
-    public String sugestao(Model model, @RequestParam("nomeCliente") String nomeCliente, @RequestParam("livroSugerido") String livroSugerido) {
+    public String sugestao(Model model, @RequestParam("nomeCliente") String nomeCliente,
+            @RequestParam("livroSugerido") String livroSugerido) {
         if (livroSugerido.isBlank()) {
             model.addAttribute("erro", "Livro sugerido não informado");
             model.addAttribute("nomeCliente", nomeCliente);

@@ -9,6 +9,12 @@
 
     <h1>Acervo de Livros</h1>
 
+    <#if usuarioLogado??>
+        <p>
+            <a href="/livros/novo">+ Cadastrar novo livro</a>
+        </p>
+    </#if>
+
     <#if livros?size == 0>
         <p>Nenhum livro no acervo no momento.</p>
     <#else>

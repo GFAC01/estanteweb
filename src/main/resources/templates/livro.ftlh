@@ -14,6 +14,10 @@
     <p><strong>Preço:</strong> R$ ${livro.preco?string["0.00"]}</p>
 
     <p>
+        <#if usuarioLogado??>
+            <a href="/livros/${livro.id?c}/editar">Editar livro</a> | 
+            <a href="/livros/${livro.id?c}/remover">Remover livro</a> | 
+        </#if>
         <a href="/livros/html">Voltar para o acervo</a>
     </p>
 
@@ -30,4 +34,3 @@
 
 </body>
 </html>
-

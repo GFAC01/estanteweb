@@ -29,6 +29,33 @@ public class SugestaoRepository {
         return sugestoes;
     }
 
+    public List<Sugestao> buscar(String termoCliente, String termoLivro) {
+        StringBuilder sql = new StringBuilder("SELECT * FROM sugestao WHERE 1=1");
+        List<Object> parametros = new ArrayList<>();
+
+        if (termoCliente != null && !termoCliente.isBlank()) {
+            sql.append(" AND nome_cliente LIKE ? ESCAPE '\\'");
+            parametros.add("%" + escaparLike(termoCliente.trim()) + "%");
+        }
+        if (termoLivro != null && !termoLivro.isBlank()) {
+            sql.append(" AND livro_sugerido LIKE ? ESCAPE '\\'");
+            parametros.add("%" + escaparLike(termoLivro.trim()) + "%");
+        }
+
+        List<Map<String, Object>> linhas = jdbcTemplate.queryForList(sql.toString(), parametros.toArray());
+        List<Sugestao> sugestoes = new ArrayList<>();
+        for (Map<String, Object> linha : linhas) {
+            sugestoes.add(Sugestao.deMap(linha));
+        }
+        return sugestoes;
+    }
+
+    private String escaparLike(String valor) {
+        return valor.replace("\\", "\\\\")
+                    .replace("%", "\\%")
+                    .replace("_", "\\_");
+    }
+
     public List<Sugestao> listarTodos() {
         return listarTodas();
     }

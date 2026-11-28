@@ -118,12 +118,25 @@ public class LivroController {
     }
 
     @GetMapping(value = "/livros/html", produces = "text/html")
-    public String listarHtml(Model model, @RequestParam(required = false) String ordem) { 
-        if (ordem != null && !ordem.isBlank()) {
-            model.addAttribute("livros", repoLivros.listarOrdenadoPor(ordem));
+    public String listarHtml(Model model,
+                             @RequestParam(required = false) String q,
+                             @RequestParam(required = false) String autor,
+                             @RequestParam(required = false) String ordem) { 
+        List<Livro> livros;
+        boolean temFiltro = (q != null && !q.isBlank()) || (autor != null && !autor.isBlank());
+
+        if (temFiltro) {
+            livros = repoLivros.buscar(q, autor);
+        } else if (ordem != null && !ordem.isBlank()) {
+            livros = repoLivros.listarOrdenadoPor(ordem);
         } else {
-            model.addAttribute("livros", repoLivros.listarTodos());
+            livros = repoLivros.listarTodos();
         }
+
+        model.addAttribute("livros", livros);
+        model.addAttribute("q", q);
+        model.addAttribute("autor", autor);
+        model.addAttribute("temFiltro", temFiltro);
 
         return "livros";
     }

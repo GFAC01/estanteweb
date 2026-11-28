@@ -1,5 +1,6 @@
 package br.com.estanteweb;
 
+import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -19,8 +20,24 @@ public class SugestaoController {
     }
 
     @GetMapping("/sugestoes")
-    public String listar(Model model) {
-        model.addAttribute("sugestoes", repoSugestoes.listarTodas());
+    public String listar(Model model,
+                         @RequestParam(required = false) String nomeCliente,
+                         @RequestParam(required = false) String livroSugerido) {
+        boolean temFiltro = (nomeCliente != null && !nomeCliente.isBlank()) ||
+                            (livroSugerido != null && !livroSugerido.isBlank());
+
+        List<Sugestao> sugestoes;
+        if (temFiltro) {
+            sugestoes = repoSugestoes.buscar(nomeCliente, livroSugerido);
+        } else {
+            sugestoes = repoSugestoes.listarTodas();
+        }
+
+        model.addAttribute("sugestoes", sugestoes);
+        model.addAttribute("nomeCliente", nomeCliente);
+        model.addAttribute("livroSugerido", livroSugerido);
+        model.addAttribute("temFiltro", temFiltro);
+
         return "sugestoes";
     }
 

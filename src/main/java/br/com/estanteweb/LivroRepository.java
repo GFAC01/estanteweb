@@ -33,6 +33,47 @@ public class LivroRepository {
         return Livro.deMap(linhas.get(0));
     }
 
+    public List<Livro> buscarPorTitulo(String termo) {
+        if (termo == null || termo.isBlank()) {
+            return listarTodos();
+        }
+        String sql = "SELECT * FROM livro WHERE titulo LIKE ? ESCAPE '\\'";
+        String termoEscapado = escaparLike(termo.trim());
+        List<Map<String, Object>> linhas = jdbcTemplate.queryForList(sql, "%" + termoEscapado + "%");
+        List<Livro> livros = new ArrayList<>();
+        for (Map<String, Object> linha : linhas) {
+            livros.add(Livro.deMap(linha));
+        }
+        return livros;
+    }
+
+    public List<Livro> buscar(String termo, String autor) {
+        StringBuilder sql = new StringBuilder("SELECT * FROM livro WHERE 1=1");
+        List<Object> parametros = new ArrayList<>();
+
+        if (termo != null && !termo.isBlank()) {
+            sql.append(" AND titulo LIKE ? ESCAPE '\\'");
+            parametros.add("%" + escaparLike(termo.trim()) + "%");
+        }
+        if (autor != null && !autor.isBlank()) {
+            sql.append(" AND autor LIKE ? ESCAPE '\\'");
+            parametros.add("%" + escaparLike(autor.trim()) + "%");
+        }
+
+        List<Map<String, Object>> linhas = jdbcTemplate.queryForList(sql.toString(), parametros.toArray());
+        List<Livro> livros = new ArrayList<>();
+        for (Map<String, Object> linha : linhas) {
+            livros.add(Livro.deMap(linha));
+        }
+        return livros;
+    }
+
+    private String escaparLike(String valor) {
+        return valor.replace("\\", "\\\\")
+                    .replace("%", "\\%")
+                    .replace("_", "\\_");
+    }
+
     public List<Livro> listarOrdenadoPor(String coluna) {
         if (coluna == null) {
             return listarTodos();
